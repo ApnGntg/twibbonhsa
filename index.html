@@ -1,322 +1,619 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Twibbon HSA</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-    body {
-        margin: 0;
-        font-family: 'Poppins', sans-serif;
-        background: #f0f4ff;
-        color: #333;
-    }
-    .header {
-        text-align: center;
-        padding: 30px 20px;
-        background: linear-gradient(135deg, #6a85b6, #bac8e0);
-        color: white;
-        border-radius: 0 0 25px 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    h1 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 32px;
-    }
-    .header p {
-        margin-top: 5px;
-        font-size: 15px;
-        opacity: .9;
-    }
-    .container {
-        margin-top: 30px;
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 20px;
-        padding-bottom: 50px;
-    }
-    .editor {
-        max-width: 500px;
-        width: 90%;
-    }
-    .canvas-wrapper {
-        width: 100%;
-        aspect-ratio: 1/1;
-        background: #ffffff;
-        border-radius: 22px;
-        overflow: hidden;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-        cursor: grab;
-    }
-    .controls {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    .uploadBox, .templateBox {
-        background: white;
-        padding: 12px;
-        border-radius: 15px;
-        text-align: center;
-        border: 2px dashed #a0bfff;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        color: #3f4a8a;
-        transition: 0.3s;
-    }
-    .uploadBox:hover, .templateBox:hover {
-        background: #e3ebff;
-    }
-    .uploadBox input {
-        display: none;
-    }
-    .btn-download {
-        padding: 15px;
-        background: #4a79f9;
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        border: none;
-        border-radius: 15px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .btn-download:hover {
-        background: #3b5fd1;
-    }
-    input[type="text"], select, input[type="range"] {
-        padding: 10px;
-        border-radius: 12px;
-        border: 1px solid #ccc;
-        font-size: 15px;
-        width: 100%;
-    }
-    label {
-        font-weight: 500;
-        font-size: 14px;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 Twibbon HSA - Pembuat Twibbon Keren</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        /* Template Selection */
+        .template-section {
+            margin-bottom: 30px;
+        }
+
+        .template-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .template-item {
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background: #f8f9ff;
+        }
+
+        .template-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .template-item.active {
+            border-color: #667eea;
+            background: #e8ebff;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .template-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .template-item p {
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-box:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-box.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .upload-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .upload-box p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-section {
+            display: none;
+            margin: 30px 0;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+
+            .template-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 <body>
-
-<div class="header">
-    <h1>🎓 Twibbon HSA</h1>
-    <p>Buat twibbon keren untuk acara sekolahmu!</p>
-</div>
-
-<div class="container">
-    <div class="editor">
-        <div class="canvas-wrapper">
-            <canvas id="twibbonCanvas"></canvas>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Twibbon HSA</h1>
+            <p>Buat twibbon keren untuk acara sekolahmu!</p>
         </div>
-        <div class="controls">
-            <label class="uploadBox">
-                Upload Foto
-                <input type="file" id="uploadFoto" accept="image/*">
-            </label>
 
-            <label class="templateBox">
-                Pilih Template Twibbon
-                <select id="selectFrame">
-                    <option value="">-- Pilih Template --</option>
-                    <option value="frame1.png">Polaroid</option>
-                    <option value="frame2.png">Santri</option>
-                    <option value="frame3.png">Kartini</option>
-                </select>
-            </label>
+        <div class="content">
+            <!-- Template Selection -->
+            <div class="template-section">
+                <h2>📋 Pilih Template Twibbon</h2>
+                <div class="template-grid" id="templateGrid">
+                    <!-- Templates akan di-generate di sini -->
+                </div>
+            </div>
 
-            <input type="text" id="textOverlay" placeholder="Tulis nama / kelas">
+            <div class="upload-section">
+                <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📸</div>
+                    <h3>Upload Foto Kamu</h3>
+                    <p>Klik di sini atau drag & drop foto kamu<br>Format: JPG, PNG (Max 5MB)</p>
+                </div>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
 
-            <label>
-                Filter:
-                <select id="filterSelect">
-                    <option value="none">Normal</option>
-                    <option value="grayscale(100%)">Grayscale</option>
-                    <option value="sepia(100%)">Sepia</option>
-                    <option value="brightness(1.2)">Bright</option>
-                </select>
-            </label>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Memproses foto...</p>
+            </div>
 
-            <label>
-                Geser Horizontal:
-                <input type="range" id="posX" min="0" max="1000" value="500">
-            </label>
-            <label>
-                Geser Vertikal:
-                <input type="range" id="posY" min="0" max="1000" value="500">
-            </label>
-            <label>
-                Zoom:
-                <input type="range" id="scale" min="0.1" max="5" step="0.01" value="1">
-            </label>
-            <label>
-                Rotate (derajat):
-                <input type="range" id="rotate" min="0" max="360" step="1" value="0">
-            </label>
+            <div class="preview-section" id="previewSection">
+                <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Preview Twibbon Kamu</h2>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label>🔍 Zoom: <span id="scaleValue">1.0</span>x</label>
+                        <input type="range" id="scaleSlider" min="0.5" max="3" step="0.1" value="1">
+                    </div>
+                    <div class="control-group">
+                        <label>↔️ Posisi Horizontal: <span id="xValue">0</span></label>
+                        <input type="range" id="xSlider" min="-200" max="200" step="1" value="0">
+                    </div>
+                    <div class="control-group">
+                        <label>↕️ Posisi Vertikal: <span id="yValue">0</span></label>
+                        <input type="range" id="ySlider" min="-200" max="200" step="1" value="0">
+                    </div>
+                </div>
 
-            <button id="btnDownload" class="btn-download">Download Twibbon</button>
+                <div class="canvas-container">
+                    <canvas id="canvas" width="800" height="800"></canvas>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-success" onclick="downloadImage()">💾 Download Twibbon</button>
+                    <button class="btn-secondary" onclick="resetAll()">🔄 Ganti Foto</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ for HSA Community</p>
         </div>
     </div>
-</div>
 
-<script>
-const canvas = document.getElementById("twibbonCanvas");
-const ctx = canvas.getContext("2d");
-canvas.width = 1000;
-canvas.height = 1000;
+    <script>
+        // KONFIGURASI TEMPLATE - TAMBAHKAN FILE FRAME KAMU DI SINI
+        const templates = [
+            { id: 1, name: 'Mpls', file: 'mpls.png' },
+            { id: 2, name: 'Frame 2', file: 'frame2.png' },
+            { id: 3, name: 'Frame 3', file: 'frame3.png' },
+            // Tambahkan template lainnya di sini
+            // { id: 4, name: 'Frame 4', file: 'frame4.png' },
+        ];
 
-let foto = new Image();
-let frame = new Image();
-let fotoLoaded = false;
-let frameLoaded = false;
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let uploadedImage = null;
+        let currentFrame = null;
+        let selectedTemplateId = 1; // Default template pertama
+        
+        // Variabel untuk posisi dan scale
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
 
-const textInput = document.getElementById("textOverlay");
-const filterSelect = document.getElementById("filterSelect");
-
-// Sliders
-const posXSlider = document.getElementById("posX");
-const posYSlider = document.getElementById("posY");
-const scaleSlider = document.getElementById("scale");
-const rotateSlider = document.getElementById("rotate");
-
-// Foto properties
-let fotoX = canvas.width / 2;
-let fotoY = canvas.height / 2;
-let fotoScale = 1;
-let fotoRotate = 0;
-
-// Upload Foto
-document.getElementById("uploadFoto").addEventListener("change", function(e){
-    const file = e.target.files[0];
-    foto.src = URL.createObjectURL(file);
-    foto.onload = () => {
-        fotoLoaded = true;
-        fotoX = canvas.width / 2;
-        fotoY = canvas.height / 2;
-        fotoScale = 1;
-        fotoRotate = 0;
-        posXSlider.value = fotoX;
-        posYSlider.value = fotoY;
-        scaleSlider.value = fotoScale;
-        rotateSlider.value = fotoRotate;
-        renderTwibbon();
-    }
-});
-
-// Pilih Template Frame
-document.getElementById("selectFrame").addEventListener("change", function(e){
-    const value = e.target.value;
-    if(value){
-        frame.src = value;
-        frame.onload = () => {
-            frameLoaded = true;
-            renderTwibbon();
+        // Generate template grid
+        function generateTemplateGrid() {
+            const grid = document.getElementById('templateGrid');
+            grid.innerHTML = '';
+            
+            templates.forEach((template, index) => {
+                const item = document.createElement('div');
+                item.className = 'template-item' + (index === 0 ? ' active' : '');
+                item.onclick = () => selectTemplate(template.id);
+                
+                item.innerHTML = `
+                    <img src="${template.file}" alt="${template.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23667eea%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2220%22 fill=%22white%22%3E${template.name}%3C/text%3E%3C/svg%3E'">
+                    <p>${template.name}</p>
+                `;
+                
+                grid.appendChild(item);
+            });
         }
-    } else {
-        frameLoaded = false;
-        renderTwibbon();
-    }
-});
 
-// Input Text & Filter
-textInput.addEventListener("input", renderTwibbon);
-filterSelect.addEventListener("change", renderTwibbon);
+        // Select template
+        function selectTemplate(templateId) {
+            selectedTemplateId = templateId;
+            
+            // Update active class
+            document.querySelectorAll('.template-item').forEach((item, index) => {
+                if (templates[index].id === templateId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // Load new frame
+            const template = templates.find(t => t.id === templateId);
+            if (template) {
+                currentFrame = new Image();
+                currentFrame.crossOrigin = "anonymous";
+                currentFrame.src = template.file;
+                currentFrame.onload = () => {
+                    console.log('Frame loaded:', template.name);
+                    if (uploadedImage) {
+                        drawCanvas();
+                    }
+                };
+                currentFrame.onerror = () => {
+                    console.error('Failed to load frame:', template.file);
+                };
+            }
+        }
 
-// Slider Events
-posXSlider.addEventListener("input", () => { fotoX = parseFloat(posXSlider.value); renderTwibbon(); });
-posYSlider.addEventListener("input", () => { fotoY = parseFloat(posYSlider.value); renderTwibbon(); });
-scaleSlider.addEventListener("input", () => { fotoScale = parseFloat(scaleSlider.value); renderTwibbon(); });
-rotateSlider.addEventListener("input", () => { fotoRotate = parseFloat(rotateSlider.value); renderTwibbon(); });
+        // Initialize with first template
+        generateTemplateGrid();
+        selectTemplate(1);
 
-// Drag Foto
-let isDragging = false;
-let dragStart = {x:0, y:0};
-let lastPos = {x: fotoX, y: fotoY};
+        // Upload box drag and drop
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
 
-canvas.addEventListener("mousedown", (e) => {
-    if(!fotoLoaded) return;
-    isDragging = true;
-    dragStart.x = e.offsetX;
-    dragStart.y = e.offsetY;
-    lastPos.x = fotoX;
-    lastPos.y = fotoY;
-});
-canvas.addEventListener("mousemove", (e) => {
-    if(isDragging){
-        const dx = e.offsetX - dragStart.x;
-        const dy = e.offsetY - dragStart.y;
-        fotoX = lastPos.x + dx;
-        fotoY = lastPos.y + dy;
-        posXSlider.value = fotoX;
-        posYSlider.value = fotoY;
-        renderTwibbon();
-    }
-});
-canvas.addEventListener("mouseup", () => { isDragging = false; });
-canvas.addEventListener("mouseleave", () => { isDragging = false; });
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, preventDefaults, false);
+        });
 
-// Zoom dengan scroll
-canvas.addEventListener("wheel", (e) => {
-    if(!fotoLoaded) return;
-    e.preventDefault();
-    fotoScale += e.deltaY * -0.001;
-    fotoScale = Math.min(Math.max(0.1, fotoScale), 5);
-    scaleSlider.value = fotoScale;
-    renderTwibbon();
-});
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
-// Render Twibbon
-function renderTwibbon() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, () => {
+                uploadBox.classList.add('dragover');
+            });
+        });
 
-    ctx.filter = filterSelect.value;
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, () => {
+                uploadBox.classList.remove('dragover');
+            });
+        });
 
-    if(fotoLoaded){
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, 0, Math.PI*2);
-        ctx.closePath();
-        ctx.clip();
+        uploadBox.addEventListener('drop', handleDrop);
 
-        ctx.translate(fotoX, fotoY);
-        ctx.rotate((fotoRotate * Math.PI)/180);
-        const w = canvas.width * fotoScale;
-        const h = canvas.height * fotoScale;
-        ctx.drawImage(foto, -w/2, -h/2, w, h);
-        ctx.restore();
-    }
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
 
-    if(frameLoaded) ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
 
-    const text = textInput.value;
-    if(text){
-        ctx.font = "60px Poppins";
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.shadowColor = "black";
-        ctx.shadowBlur = 8;
-        ctx.fillText(text, canvas.width/2, canvas.height - 80);
-    }
-}
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                
+                if (!file.type.startsWith('image/')) {
+                    alert('Please upload an image file!');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size should be less than 5MB!');
+                    return;
+                }
+                
+                document.getElementById('loading').classList.add('active');
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImage = new Image();
+                    uploadedImage.onload = function() {
+                        setTimeout(() => {
+                            document.getElementById('loading').classList.remove('active');
+                            document.getElementById('previewSection').classList.add('active');
+                            resetControls();
+                            drawCanvas();
+                        }, 500);
+                    };
+                    uploadedImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
-// Download
-document.getElementById("btnDownload").addEventListener("click", () => {
-    const link = document.createElement("a");
-    link.download = "twibbon-sekolah.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-});
-</script>
+        // Slider controls
+        document.getElementById('scaleSlider').addEventListener('input', function(e) {
+            scale = parseFloat(e.target.value);
+            document.getElementById('scaleValue').textContent = scale.toFixed(1);
+            drawCanvas();
+        });
 
+        document.getElementById('xSlider').addEventListener('input', function(e) {
+            offsetX = parseInt(e.target.value);
+            document.getElementById('xValue').textContent = offsetX;
+            drawCanvas();
+        });
+
+        document.getElementById('ySlider').addEventListener('input', function(e) {
+            offsetY = parseInt(e.target.value);
+            document.getElementById('yValue').textContent = offsetY;
+            drawCanvas();
+        });
+
+        function drawCanvas() {
+            if (!uploadedImage || !currentFrame) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw uploaded image with transformations
+            ctx.save();
+            ctx.translate(canvas.width/2 + offsetX, canvas.height/2 + offsetY);
+            ctx.scale(scale, scale);
+            
+            const imgAspect = uploadedImage.width / uploadedImage.height;
+            const canvasAspect = canvas.width / canvas.height;
+            
+            let drawWidth, drawHeight;
+            if (imgAspect > canvasAspect) {
+                drawHeight = canvas.height;
+                drawWidth = drawHeight * imgAspect;
+            } else {
+                drawWidth = canvas.width;
+                drawHeight = drawWidth / imgAspect;
+            }
+            
+            ctx.drawImage(uploadedImage, -drawWidth/2, -drawHeight/2, drawWidth, drawHeight);
+            ctx.restore();
+
+            // Draw frame overlay
+            if (currentFrame.complete && currentFrame.naturalHeight !== 0) {
+                ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function resetControls() {
+            scale = 1;
+            offsetX = 0;
+            offsetY = 0;
+            document.getElementById('scaleSlider').value = 1;
+            document.getElementById('xSlider').value = 0;
+            document.getElementById('ySlider').value = 0;
+            document.getElementById('scaleValue').textContent = '1.0';
+            document.getElementById('xValue').textContent = '0';
+            document.getElementById('yValue').textContent = '0';
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            const template = templates.find(t => t.id === selectedTemplateId);
+            link.download = 'twibbon-hsa-' + template.name.toLowerCase().replace(' ', '-') + '-' + Date.now() + '.png';
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        }
+
+        function resetAll() {
+            uploadedImage = null;
+            document.getElementById('previewSection').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
 </body>
 </html>
-

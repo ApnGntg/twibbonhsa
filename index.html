@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Twibbon Sekolah</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: #f0f4ff;
+        color: #333;
+    }
+    .header {
+        text-align: center;
+        padding: 30px 20px;
+        background: linear-gradient(135deg, #6a85b6, #bac8e0);
+        color: white;
+        border-radius: 0 0 25px 25px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 32px;
+    }
+    .header p {
+        margin-top: 5px;
+        font-size: 15px;
+        opacity: .9;
+    }
+    .container {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding-bottom: 50px;
+    }
+    .editor {
+        max-width: 500px;
+        width: 90%;
+    }
+    .canvas-wrapper {
+        width: 100%;
+        aspect-ratio: 1/1;
+        background: #ffffff;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: grab;
+    }
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .uploadBox, .templateBox {
+        background: white;
+        padding: 12px;
+        border-radius: 15px;
+        text-align: center;
+        border: 2px dashed #a0bfff;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        color: #3f4a8a;
+        transition: 0.3s;
+    }
+    .uploadBox:hover, .templateBox:hover {
+        background: #e3ebff;
+    }
+    .uploadBox input {
+        display: none;
+    }
+    .btn-download {
+        padding: 15px;
+        background: #4a79f9;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-download:hover {
+        background: #3b5fd1;
+    }
+    input[type="text"], select, input[type="range"] {
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        font-size: 15px;
+        width: 100%;
+    }
+    label {
+        font-weight: 500;
+        font-size: 14px;
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🎓 Twibbon Sekolah</h1>
+    <p>Buat twibbon keren untuk acara sekolahmu!</p>
+</div>
+
+<div class="container">
+    <div class="editor">
+        <div class="canvas-wrapper">
+            <canvas id="twibbonCanvas"></canvas>
+        </div>
+        <div class="controls">
+            <label class="uploadBox">
+                Upload Foto
+                <input type="file" id="uploadFoto" accept="image/*">
+            </label>
+
+            <label class="templateBox">
+                Pilih Template Twibbon
+                <select id="selectFrame">
+                    <option value="">-- Pilih Template --</option>
+                    <option value="frame1.png">Polaroid</option>
+                    <option value="frame2.png">Graduation</option>
+                    <option value="frame3.png">Pramuka</option>
+                </select>
+            </label>
+
+            <input type="text" id="textOverlay" placeholder="Tulis nama / kelas">
+
+            <label>
+                Filter:
+                <select id="filterSelect">
+                    <option value="none">Normal</option>
+                    <option value="grayscale(100%)">Grayscale</option>
+                    <option value="sepia(100%)">Sepia</option>
+                    <option value="brightness(1.2)">Bright</option>
+                </select>
+            </label>
+
+            <label>
+                Geser Horizontal:
+                <input type="range" id="posX" min="0" max="1000" value="500">
+            </label>
+            <label>
+                Geser Vertikal:
+                <input type="range" id="posY" min="0" max="1000" value="500">
+            </label>
+            <label>
+                Zoom:
+                <input type="range" id="scale" min="0.1" max="5" step="0.01" value="1">
+            </label>
+            <label>
+                Rotate (derajat):
+                <input type="range" id="rotate" min="0" max="360" step="1" value="0">
+            </label>
+
+            <button id="btnDownload" class="btn-download">Download Twibbon</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById("twibbonCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = 1000;
+canvas.height = 1000;
+
+let foto = new Image();
+let frame = new Image();
+let fotoLoaded = false;
+let frameLoaded = false;
+
+const textInput = document.getElementById("textOverlay");
+const filterSelect = document.getElementById("filterSelect");
+
+// Sliders
+const posXSlider = document.getElementById("posX");
+const posYSlider = document.getElementById("posY");
+const scaleSlider = document.getElementById("scale");
+const rotateSlider = document.getElementById("rotate");
+
+// Foto properties
+let fotoX = canvas.width / 2;
+let fotoY = canvas.height / 2;
+let fotoScale = 1;
+let fotoRotate = 0;
+
+// Upload Foto
+document.getElementById("uploadFoto").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    foto.src = URL.createObjectURL(file);
+    foto.onload = () => {
+        fotoLoaded = true;
+        fotoX = canvas.width / 2;
+        fotoY = canvas.height / 2;
+        fotoScale = 1;
+        fotoRotate = 0;
+        posXSlider.value = fotoX;
+        posYSlider.value = fotoY;
+        scaleSlider.value = fotoScale;
+        rotateSlider.value = fotoRotate;
+        renderTwibbon();
+    }
+});
+
+// Pilih Template Frame
+document.getElementById("selectFrame").addEventListener("change", function(e){
+    const value = e.target.value;
+    if(value){
+        frame.src = value;
+        frame.onload = () => {
+            frameLoaded = true;
+            renderTwibbon();
+        }
+    } else {
+        frameLoaded = false;
+        renderTwibbon();
+    }
+});
+
+// Input Text & Filter
+textInput.addEventListener("input", renderTwibbon);
+filterSelect.addEventListener("change", renderTwibbon);
+
+// Slider Events
+posXSlider.addEventListener("input", () => { fotoX = parseFloat(posXSlider.value); renderTwibbon(); });
+posYSlider.addEventListener("input", () => { fotoY = parseFloat(posYSlider.value); renderTwibbon(); });
+scaleSlider.addEventListener("input", () => { fotoScale = parseFloat(scaleSlider.value); renderTwibbon(); });
+rotateSlider.addEventListener("input", () => { fotoRotate = parseFloat(rotateSlider.value); renderTwibbon(); });
+
+// Drag Foto
+let isDragging = false;
+let dragStart = {x:0, y:0};
+let lastPos = {x: fotoX, y: fotoY};
+
+canvas.addEventListener("mousedown", (e) => {
+    if(!fotoLoaded) return;
+    isDragging = true;
+    dragStart.x = e.offsetX;
+    dragStart.y = e.offsetY;
+    lastPos.x = fotoX;
+    lastPos.y = fotoY;
+});
+canvas.addEventListener("mousemove", (e) => {
+    if(isDragging){
+        const dx = e.offsetX - dragStart.x;
+        const dy = e.offsetY - dragStart.y;
+        fotoX = lastPos.x + dx;
+        fotoY = lastPos.y + dy;
+        posXSlider.value = fotoX;
+        posYSlider.value = fotoY;
+        renderTwibbon();
+    }
+});
+canvas.addEventListener("mouseup", () => { isDragging = false; });
+canvas.addEventListener("mouseleave", () => { isDragging = false; });
+
+// Zoom dengan scroll
+canvas.addEventListener("wheel", (e) => {
+    if(!fotoLoaded) return;
+    e.preventDefault();
+    fotoScale += e.deltaY * -0.001;
+    fotoScale = Math.min(Math.max(0.1, fotoScale), 5);
+    scaleSlider.value = fotoScale;
+    renderTwibbon();
+});
+
+// Render Twibbon
+function renderTwibbon() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.filter = filterSelect.value;
+
+    if(fotoLoaded){
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, 0, Math.PI*2);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.translate(fotoX, fotoY);
+        ctx.rotate((fotoRotate * Math.PI)/180);
+        const w = canvas.width * fotoScale;
+        const h = canvas.height * fotoScale;
+        ctx.drawImage(foto, -w/2, -h/2, w, h);
+        ctx.restore();
+    }
+
+    if(frameLoaded) ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+
+    const text = textInput.value;
+    if(text){
+        ctx.font = "60px Poppins";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 8;
+        ctx.fillText(text, canvas.width/2, canvas.height - 80);
+    }
+}
+
+// Download
+document.getElementById("btnDownload").addEventListener("click", () => {
+    const link = document.createElement("a");
+    link.download = "twibbon-sekolah.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+});
+</script>
+
+</body>
+</html>

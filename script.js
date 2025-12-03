@@ -1,671 +1,435 @@
-// ===================================
-// SCRIPT.JS LENGKAP UNTUK TWIBBON HSA
-// GANTI SEMUA ISI script.js DENGAN INI
-// ===================================
+// KONFIGURASI TEMPLATE
+const templates = [
+    { id: 1, name: 'MPLS', file: 'mpls.png' },
+    { id: 2, name: 'SANTRI', file: 'frame2.png' },
+    { id: 3, name: 'KARTINI', file: 'frame3.png' },
+];
 
-// ===== GLOBAL VARIABLES =====
-let selectedFrame = null;
-let uploadedPhoto = null;
-let canvas, ctx;
+let customTemplates = [];
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let uploadedImage = null;
+let currentFrame = null;
+let selectedTemplateId = 1;
+
 let scale = 1;
 let offsetX = 0;
 let offsetY = 0;
 
-// ===== TEMPLATES FRAME =====
-const templates = [
-    { id: 1, name: 'Frame 1', src: 'frames/frame1.png' },
-    { id: 2, name: 'Frame 2', src: 'frame2.png' },
-    { id: 3, name: 'Frame 3', src: 'frame3.png' },
-    { id: 4, name: 'MPLS', src: 'mpls.png' },
-    // Tambahkan frame lain di sini
-];
-
-// ===== INITIALIZE =====
-document.addEventListener('DOMContentLoaded', function() {
-    canvas = document.getElementById('canvas');
-    if (canvas) {
-        ctx = canvas.getContext('2d');
-    }
-    
-    loadTemplates();
-    setupEventListeners();
-    animateStats();
-    loadHistory();
-});
-
-// ===== TOGGLE MENU (MOBILE) =====
-function toggleMenu() {
-    const navMenu = document.getElementById('navMenu');
-    if (navMenu) {
-        navMenu.classList.toggle('active');
-    }
-}
-
-// ===== TOGGLE THEME (DARK/LIGHT MODE) =====
+// Theme Toggle
 function toggleTheme() {
-    const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const themeToggle = document.querySelector('.theme-toggle');
     
     if (currentTheme === 'dark') {
-        body.setAttribute('data-theme', 'light');
+        html.removeAttribute('data-theme');
+        themeToggle.textContent = '🌙';
         localStorage.setItem('theme', 'light');
     } else {
-        body.setAttribute('data-theme', 'dark');
+        html.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️';
         localStorage.setItem('theme', 'dark');
     }
 }
 
 // Load saved theme
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-    document.body.setAttribute('data-theme', savedTheme);
+window.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('.theme-toggle').textContent = '☀️';
+    }
+    loadHistory();
+});
+
+// Mobile Menu Toggle
+function toggleMenu() {
+    const navMenu = document.getElementById('navMenu');
+    navMenu.classList.toggle('active');
 }
 
-// ===== ANIMATE STATISTICS COUNTER =====
-function animateStats() {
-    const stats = document.querySelectorAll('.stat-number');
+// Generate template grid
+function generateTemplateGrid() {
+    const grid = document.getElementById('templateGrid');
+    grid.innerHTML = '';
     
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const target = parseInt(entry.target.getAttribute('data-count'));
-                animateCounter(entry.target, target);
-                observer.unobserve(entry.target);
-            }
-        });
-    });
+    const allTemplates = [...templates, ...customTemplates];
     
-    stats.forEach(stat => observer.observe(stat));
-}
-
-function animateCounter(element, target) {
-    let current = 0;
-    const increment = target / 50;
-    const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
-            element.textContent = target;
-            clearInterval(timer);
-        } else {
-            element.textContent = Math.floor(current);
-        }
-    }, 30);
-}
-
-// ===== LOAD TEMPLATES =====
-function loadTemplates() {
-    const templateGrid = document.getElementById('templateGrid');
-    if (!templateGrid) return;
-    
-    templateGrid.innerHTML = '';
-    
-    templates.forEach(template => {
+    allTemplates.forEach((template, index) => {
         const item = document.createElement('div');
-        item.className = 'template-item';
-        item.innerHTML = `<img src="${template.src}" alt="${template.name}">`;
-        item.onclick = () => selectTemplate(template.src, item);
-        templateGrid.appendChild(item);
+        item.className = 'template-item' + (index === 0 ? ' active' : '');
+        item.onclick = () => selectTemplate(template.id);
+        
+        item.innerHTML = `
+            <img src="${template.file}" alt="${template.name}" 
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23667eea%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2220%22 fill=%22white%22%3E${template.name}%3C/text%3E%3C/svg%3E'">
+            <p>${template.name}</p>
+        `;
+        
+        grid.appendChild(item);
     });
 }
 
-// ===== SELECT TEMPLATE =====
-function selectTemplate(src, element) {
-    // Remove previous selection
+// Select template
+function selectTemplate(templateId) {
+    selectedTemplateId = templateId;
+    
     document.querySelectorAll('.template-item').forEach(item => {
-        item.classList.remove('selected');
+        item.classList.remove('active');
     });
     
-    // Add selection to clicked item
-    element.classList.add('selected');
+    const allTemplates = [...templates, ...customTemplates];
+    const template = allTemplates.find(t => t.id === templateId);
     
-    selectedFrame = new Image();
-    selectedFrame.src = src;
-    selectedFrame.onload = () => {
-        if (uploadedPhoto) {
-            renderCanvas();
+    if (template) {
+        const items = document.querySelectorAll('.template-item');
+        const index = allTemplates.indexOf(template);
+        if (items[index]) {
+            items[index].classList.add('active');
         }
-    };
-}
-
-// ===== SETUP EVENT LISTENERS =====
-function setupEventListeners() {
-    // File input for photo
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.addEventListener('change', handlePhotoUpload);
-    }
-    
-    // Custom frame upload
-    const customFrameInput = document.getElementById('customFrameInput');
-    if (customFrameInput) {
-        customFrameInput.addEventListener('change', handleCustomFrame);
-    }
-    
-    // Drag and drop
-    const uploadBox = document.getElementById('uploadBox');
-    if (uploadBox) {
-        uploadBox.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadBox.style.background = 'rgba(33, 150, 243, 0.1)';
-        });
         
-        uploadBox.addEventListener('dragleave', () => {
-            uploadBox.style.background = '';
-        });
-        
-        uploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadBox.style.background = '';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                loadPhotoFromFile(file);
+        currentFrame = new Image();
+        currentFrame.crossOrigin = "anonymous";
+        currentFrame.src = template.file;
+        currentFrame.onload = () => {
+            if (uploadedImage) {
+                drawCanvas();
             }
-        });
-    }
-    
-    // Control sliders
-    const scaleSlider = document.getElementById('scaleSlider');
-    const xSlider = document.getElementById('xSlider');
-    const ySlider = document.getElementById('ySlider');
-    
-    if (scaleSlider) {
-        scaleSlider.addEventListener('input', (e) => {
-            scale = parseFloat(e.target.value);
-            document.getElementById('scaleValue').textContent = scale.toFixed(1);
-            renderCanvas();
-        });
-    }
-    
-    if (xSlider) {
-        xSlider.addEventListener('input', (e) => {
-            offsetX = parseInt(e.target.value);
-            document.getElementById('xValue').textContent = offsetX;
-            renderCanvas();
-        });
-    }
-    
-    if (ySlider) {
-        ySlider.addEventListener('input', (e) => {
-            offsetY = parseInt(e.target.value);
-            document.getElementById('yValue').textContent = offsetY;
-            renderCanvas();
-        });
+        };
     }
 }
 
-// ===== HANDLE PHOTO UPLOAD =====
-function handlePhotoUpload(e) {
+// Upload custom template
+document.getElementById('customFrameInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
-    if (file) {
-        loadPhotoFromFile(file);
-    }
-}
-
-function loadPhotoFromFile(file) {
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('⚠️ Ukuran file terlalu besar! Maksimal 5MB');
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Tolong upload file gambar!');
         return;
     }
     
-    // Show loading
-    const loading = document.getElementById('loading');
-    if (loading) {
-        loading.style.display = 'block';
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const customId = Date.now();
+        customTemplates.push({
+            id: customId,
+            name: 'Custom ' + (customTemplates.length + 1),
+            file: event.target.result
+        });
+        
+        generateTemplateGrid();
+        selectTemplate(customId);
+        alert('Template custom berhasil ditambahkan! ✅');
+    };
+    reader.readAsDataURL(file);
+});
+
+generateTemplateGrid();
+selectTemplate(1);
+
+// Upload box handlers
+const uploadBox = document.getElementById('uploadBox');
+const fileInput = document.getElementById('fileInput');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadBox.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    uploadBox.addEventListener(eventName, () => {
+        uploadBox.classList.add('dragover');
+    });
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    uploadBox.addEventListener(eventName, () => {
+        uploadBox.classList.remove('dragover');
+    });
+});
+
+uploadBox.addEventListener('drop', handleDrop);
+
+function handleDrop(e) {
+    const files = e.dataTransfer.files;
+    handleFiles(files);
+}
+
+fileInput.addEventListener('change', function(e) {
+    handleFiles(e.target.files);
+});
+
+function handleFiles(files) {
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Tolong upload file gambar!');
+        return;
     }
     
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Ukuran file maksimal 5MB!');
+        return;
+    }
+    
+    document.getElementById('loading').classList.add('active');
+    
     const reader = new FileReader();
-    reader.onload = (e) => {
-        uploadedPhoto = new Image();
-        uploadedPhoto.onload = () => {
-            if (loading) {
-                loading.style.display = 'none';
-            }
-            
-            // Show preview section
-            const previewSection = document.getElementById('previewSection');
-            if (previewSection) {
-                previewSection.classList.remove('hidden');
-            }
-            
-            // Reset controls
-            resetControls();
-            
-            // Render if frame is selected
-            if (selectedFrame) {
-                renderCanvas();
-            } else {
-                alert('📋 Pilih template frame terlebih dahulu!');
-            }
+    reader.onload = function(e) {
+        uploadedImage = new Image();
+        uploadedImage.onload = function() {
+            setTimeout(() => {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('previewSection').classList.remove('hidden');
+                document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
+                resetControls();
+                drawCanvas();
+            }, 500);
         };
-        uploadedPhoto.src = e.target.result;
+        uploadedImage.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }
 
-// ===== HANDLE CUSTOM FRAME =====
-function handleCustomFrame(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            selectedFrame = new Image();
-            selectedFrame.onload = () => {
-                if (uploadedPhoto) {
-                    renderCanvas();
-                }
-                showToast('✅ Custom frame berhasil diupload!');
-            };
-            selectedFrame.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+// Slider controls
+document.getElementById('scaleSlider').addEventListener('input', function(e) {
+    scale = parseFloat(e.target.value);
+    document.getElementById('scaleValue').textContent = scale.toFixed(1);
+    drawCanvas();
+});
+
+document.getElementById('xSlider').addEventListener('input', function(e) {
+    offsetX = parseInt(e.target.value);
+    document.getElementById('xValue').textContent = offsetX;
+    drawCanvas();
+});
+
+document.getElementById('ySlider').addEventListener('input', function(e) {
+    offsetY = parseInt(e.target.value);
+    document.getElementById('yValue').textContent = offsetY;
+    drawCanvas();
+});
+
+function drawCanvas() {
+    if (!uploadedImage || !currentFrame) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(canvas.width/2 + offsetX, canvas.height/2 + offsetY);
+    ctx.scale(scale, scale);
+    
+    const imgAspect = uploadedImage.width / uploadedImage.height;
+    const canvasAspect = canvas.width / canvas.height;
+    
+    let drawWidth, drawHeight;
+    if (imgAspect > canvasAspect) {
+        drawHeight = canvas.height;
+        drawWidth = drawHeight * imgAspect;
+    } else {
+        drawWidth = canvas.width;
+        drawHeight = drawWidth / imgAspect;
+    }
+    
+    ctx.drawImage(uploadedImage, -drawWidth/2, -drawHeight/2, drawWidth, drawHeight);
+    ctx.restore();
+
+    if (currentFrame.complete && currentFrame.naturalHeight !== 0) {
+        ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
     }
 }
 
-// ===== RENDER CANVAS =====
-function renderCanvas() {
-    if (!canvas || !ctx || !uploadedPhoto || !selectedFrame) return;
-    
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // Calculate photo dimensions
-    const photoWidth = uploadedPhoto.width * scale;
-    const photoHeight = uploadedPhoto.height * scale;
-    
-    // Center photo
-    const x = (canvasWidth - photoWidth) / 2 + offsetX;
-    const y = (canvasHeight - photoHeight) / 2 + offsetY;
-    
-    // Draw photo
-    ctx.drawImage(uploadedPhoto, x, y, photoWidth, photoHeight);
-    
-    // Draw frame on top
-    ctx.drawImage(selectedFrame, 0, 0, canvasWidth, canvasHeight);
-}
-
-// ===== RESET CONTROLS =====
 function resetControls() {
     scale = 1;
     offsetX = 0;
     offsetY = 0;
-    
-    const scaleSlider = document.getElementById('scaleSlider');
-    const xSlider = document.getElementById('xSlider');
-    const ySlider = document.getElementById('ySlider');
-    
-    if (scaleSlider) {
-        scaleSlider.value = 1;
-        document.getElementById('scaleValue').textContent = '1.0';
-    }
-    if (xSlider) {
-        xSlider.value = 0;
-        document.getElementById('xValue').textContent = '0';
-    }
-    if (ySlider) {
-        ySlider.value = 0;
-        document.getElementById('yValue').textContent = '0';
-    }
+    document.getElementById('scaleSlider').value = 1;
+    document.getElementById('xSlider').value = 0;
+    document.getElementById('ySlider').value = 0;
+    document.getElementById('scaleValue').textContent = '1.0';
+    document.getElementById('xValue').textContent = '0';
+    document.getElementById('yValue').textContent = '0';
 }
 
-// ===== DOWNLOAD IMAGE =====
 function downloadImage() {
-    if (!canvas) {
-        alert('⚠️ Belum ada twibbon yang dibuat!');
-        return;
-    }
-    
     const link = document.createElement('a');
-    link.download = `twibbon-hsa-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
+    const allTemplates = [...templates, ...customTemplates];
+    const template = allTemplates.find(t => t.id === selectedTemplateId);
+    const fileName = 'twibbon-hsa-' + template.name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now() + '.png';
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
     
-    showToast('💾 Twibbon berhasil didownload!');
+    alert('✅ Twibbon berhasil didownload!');
 }
 
-// ===== SAVE TO HISTORY =====
+function resetAll() {
+    uploadedImage = null;
+    document.getElementById('previewSection').classList.add('hidden');
+    document.getElementById('fileInput').value = '';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// History Management
 function saveToHistory() {
-    if (!canvas) {
-        alert('⚠️ Belum ada twibbon yang dibuat!');
-        return;
-    }
-    
+    const dataURL = canvas.toDataURL('image/png');
     const history = JSON.parse(localStorage.getItem('twibbonHistory') || '[]');
-    const imageData = canvas.toDataURL('image/png');
     
     history.unshift({
         id: Date.now(),
-        image: imageData,
-        date: new Date().toLocaleDateString('id-ID')
+        image: dataURL,
+        date: new Date().toLocaleString('id-ID')
     });
     
-    // Limit to 10 items
-    if (history.length > 10) {
+    // Limit to 20 items
+    if (history.length > 20) {
         history.pop();
     }
     
     localStorage.setItem('twibbonHistory', JSON.stringify(history));
     loadHistory();
-    
-    showToast('💼 Twibbon berhasil disimpan ke history!');
+    alert('✅ Twibbon berhasil disimpan ke history!');
 }
 
-// ===== LOAD HISTORY =====
 function loadHistory() {
-    const historyGrid = document.getElementById('historyGrid');
-    if (!historyGrid) return;
-    
     const history = JSON.parse(localStorage.getItem('twibbonHistory') || '[]');
+    const grid = document.getElementById('historyGrid');
     
     if (history.length === 0) {
-        historyGrid.innerHTML = '<p style="color: var(--text-light);">Belum ada history. Buat twibbon pertama kamu!</p>';
+        grid.innerHTML = '<p style="color: var(--text-light);">Belum ada history. Buat twibbon pertama kamu!</p>';
         return;
     }
     
-    historyGrid.innerHTML = '';
+    grid.innerHTML = '';
     history.forEach(item => {
-        const historyItem = document.createElement('div');
-        historyItem.className = 'history-item';
-        historyItem.innerHTML = `
-            <img src="${item.image}" alt="History">
-            <div class="history-date">${item.date}</div>
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+            <img src="${item.image}" alt="History" onclick="viewHistory(${item.id})">
+            <button class="delete-btn" onclick="deleteHistory(${item.id}, event)">✕</button>
         `;
-        historyItem.onclick = () => downloadHistoryItem(item.image);
-        historyGrid.appendChild(historyItem);
+        grid.appendChild(div);
     });
 }
 
-function downloadHistoryItem(imageData) {
-    const link = document.createElement('a');
-    link.download = `twibbon-hsa-history-${Date.now()}.png`;
-    link.href = imageData;
-    link.click();
-    
-    showToast('💾 History item didownload!');
-}
-
-// ===== RESET ALL =====
-function resetAll() {
-    const confirm = window.confirm('🔄 Reset semua? Foto dan pengaturan akan dihapus.');
-    if (!confirm) return;
-    
-    uploadedPhoto = null;
-    selectedFrame = null;
-    resetControls();
-    
-    const previewSection = document.getElementById('previewSection');
-    if (previewSection) {
-        previewSection.classList.add('hidden');
-    }
-    
-    if (canvas && ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    
-    // Reset file inputs
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) fileInput.value = '';
-    
-    // Remove template selection
-    document.querySelectorAll('.template-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    
-    showToast('🔄 Reset berhasil!');
-}
-
-// ===== PWA INSTALLATION =====
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    
-    const installPrompt = document.getElementById('installPrompt');
-    if (installPrompt) {
-        installPrompt.style.display = 'block';
-    }
-});
-
-const installBtn = document.getElementById('installBtn');
-if (installBtn) {
-    installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        console.log(`User response: ${outcome}`);
-        
-        if (outcome === 'accepted') {
-            showToast('✅ Aplikasi berhasil diinstall!');
-        }
-        
-        deferredPrompt = null;
-        document.getElementById('installPrompt').style.display = 'none';
-    });
-}
-
-const dismissBtn = document.getElementById('dismissBtn');
-if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
-        document.getElementById('installPrompt').style.display = 'none';
-    });
-}
-
-// Register Service Worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/twibbonhsa/sw.js')
-            .then(registration => {
-                console.log('✅ ServiceWorker registered:', registration.scope);
-            })
-            .catch(err => {
-                console.log('❌ ServiceWorker registration failed:', err);
-            });
-    });
-}
-
-// ===== SOCIAL MEDIA SHARE (Web Share API) =====
-const shareBtn = document.getElementById('shareBtn');
-if (shareBtn) {
-    shareBtn.addEventListener('click', async () => {
-        if (!canvas) {
-            showToast('⚠️ Belum ada twibbon yang dibuat');
-            return;
-        }
-        
-        try {
-            canvas.toBlob(async (blob) => {
-                if (!blob) {
-                    showToast('❌ Gagal mengkonversi gambar');
-                    return;
-                }
-                
-                const file = new File([blob], 'twibbon-hsa.png', { type: 'image/png' });
-                
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: 'Twibbon HSA',
-                            text: 'Lihat twibbon keren yang aku buat di HSA Twibbon Generator! 🎓',
-                            files: [file]
-                        });
-                        showToast('✅ Berhasil share!');
-                    } catch (err) {
-                        if (err.name !== 'AbortError') {
-                            console.log('Error sharing:', err);
-                            fallbackShare(canvas);
-                        }
-                    }
-                } else {
-                    fallbackShare(canvas);
-                }
-            }, 'image/png');
-        } catch (err) {
-            console.error('Error:', err);
-            showToast('❌ Gagal share gambar');
-        }
-    });
-}
-
-function fallbackShare(canvas) {
-    const userChoice = confirm(
-        '📱 Browser kamu tidak support share langsung.\n\n' +
-        'Klik OK untuk download gambar,\n' +
-        'atau Cancel untuk copy link website.'
-    );
-    
-    if (userChoice) {
+function viewHistory(id) {
+    const history = JSON.parse(localStorage.getItem('twibbonHistory') || '[]');
+    const item = history.find(h => h.id === id);
+    if (item) {
         const link = document.createElement('a');
-        link.download = 'twibbon-hsa-' + Date.now() + '.png';
-        link.href = canvas.toDataURL('image/png');
+        link.download = 'twibbon-history-' + id + '.png';
+        link.href = item.image;
         link.click();
-        showToast('💾 Gambar berhasil didownload!');
-    } else {
-        const url = window.location.href;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url)
-                .then(() => showToast('📋 Link berhasil dicopy!'))
-                .catch(() => showToast('❌ Gagal copy link'));
-        } else {
-            const textArea = document.createElement('textarea');
-            textArea.value = url;
-            textArea.style.position = 'fixed';
-            textArea.style.opacity = '0';
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast('📋 Link berhasil dicopy!');
-            } catch (err) {
-                showToast('❌ Gagal copy link');
-            }
-            document.body.removeChild(textArea);
-        }
     }
 }
 
-// ===== SHARE TO SPECIFIC SOCIAL MEDIA =====
-function shareToFacebook() {
-    if (!canvas) {
-        showToast('⚠️ Belum ada twibbon yang dibuat');
-        return;
+function deleteHistory(id, event) {
+    event.stopPropagation();
+    if (confirm('Hapus twibbon ini dari history?')) {
+        let history = JSON.parse(localStorage.getItem('twibbonHistory') || '[]');
+        history = history.filter(h => h.id !== id);
+        localStorage.setItem('twibbonHistory', JSON.stringify(history));
+        loadHistory();
     }
-    
-    const url = encodeURIComponent(window.location.href);
-    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-    
-    window.open(shareUrl, 'facebook-share', 'width=600,height=400');
-    showToast('📘 Membuka Facebook...');
+}
+
+// Share Functions
+function shareToFacebook() {
+    alert('💡 Tip: Download twibbon kamu, lalu upload ke Facebook dengan caption tentang HSA!');
+    downloadImage();
 }
 
 function shareToTwitter() {
-    if (!canvas) {
-        showToast('⚠️ Belum ada twibbon yang dibuat');
-        return;
-    }
-    
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Lihat twibbon keren yang aku buat di HSA Twibbon Generator! 🎓');
-    const shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
-    
-    window.open(shareUrl, 'twitter-share', 'width=600,height=400');
-    showToast('🐦 Membuka Twitter...');
+    const text = encodeURIComponent('Lihat twibbon keren saya dari SMK HSA! 🎓 #SMKHSA #Twibbon');
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
 function shareToWhatsApp() {
-    if (!canvas) {
-        showToast('⚠️ Belum ada twibbon yang dibuat');
-        return;
-    }
-    
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Lihat twibbon keren yang aku buat di HSA Twibbon Generator! 🎓 ');
-    
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const shareUrl = isMobile 
-        ? `whatsapp://send?text=${text}${url}`
-        : `https://web.whatsapp.com/send?text=${text}${url}`;
-    
-    window.open(shareUrl, '_blank');
-    showToast('💬 Membuka WhatsApp...');
+    const text = encodeURIComponent('Lihat twibbon keren saya dari SMK HSA! 🎓');
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    setTimeout(() => {
+        alert('💡 Jangan lupa attach file twibbon yang sudah kamu download!');
+    }, 1000);
 }
 
 function shareToInstagram() {
-    if (!canvas) {
-        showToast('⚠️ Belum ada twibbon yang dibuat');
-        return;
-    }
-    
-    alert(
-        '📷 Instagram Tips:\n\n' +
-        '1. Klik tombol "Download Twibbon"\n' +
-        '2. Buka Instagram app\n' +
-        '3. Upload gambar yang sudah didownload\n' +
-        '4. Jangan lupa tag @smkhsa! 😊'
-    );
-    
-    const link = document.createElement('a');
-    link.download = 'twibbon-hsa-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    
-    showToast('💾 Gambar didownload! Upload ke Instagram ya! 📷');
+    alert('💡 Tip Instagram:\n1. Download twibbon kamu\n2. Buka Instagram\n3. Upload sebagai post/story\n4. Tag @smkhsa dan gunakan hashtag #SMKHSA');
+    downloadImage();
 }
 
-// ===== TOAST NOTIFICATION =====
-function showToast(message, duration = 3000) {
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, duration);
-}
-
-// ===== CHECK IF APP IS INSTALLED =====
-window.addEventListener('appinstalled', (evt) => {
-    console.log('✅ PWA berhasil diinstall!');
-    showToast('🎉 Aplikasi berhasil diinstall!');
-});
-
-// ===== DETECT IF RUNNING AS PWA =====
-function isRunningAsPWA() {
-    return (window.matchMedia('(display-mode: standalone)').matches) || 
-           (window.navigator.standalone) || 
-           document.referrer.includes('android-app://');
-}
-
-if (isRunningAsPWA()) {
-    console.log('✅ Running as PWA');
-} else {
-    console.log('🌐 Running in browser');
-}
-
-// ===== UPDATE AVAILABLE NOTIFICATION =====
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        const shouldRefresh = confirm(
-            '🔄 Update tersedia!\n\n' +
-            'Aplikasi akan dimuat ulang untuk mendapatkan versi terbaru.'
-        );
-        
-        if (shouldRefresh) {
-            window.location.reload();
+// Smooth scroll for navigation
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Close mobile menu after click
+            document.getElementById('navMenu').classList.remove('active');
         }
     });
+});
+
+// Animated Counter
+function animateCounter(element, target) {
+    let current = 0;
+    const increment = target / 100;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            element.textContent = target.toLocaleString('id-ID');
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current).toLocaleString('id-ID');
+        }
+    }, 20);
 }
+
+// Intersection Observer for Counter Animation
+const observerOptions = {
+    threshold: 0.5
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const counters = entry.target.querySelectorAll('.stat-number');
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-count'));
+                animateCounter(counter, target);
+            });
+            observer.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+const statsContainer = document.querySelector('.stats-container');
+if (statsContainer) {
+    observer.observe(statsContainer);
+}
+
+// Add scroll reveal animation
+const revealElements = document.querySelectorAll('.card, .gallery-item');
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, { threshold: 0.1 });
+
+revealElements.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(50px)';
+    el.style.transition = 'all 0.6s ease';
+    revealObserver.observe(el);
+});
